@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase-messaging.js"></script>
+    <script>
+        // Initialize Firebase
+
+        //파이어베이스 콘솔에 들어가면 찾을 수 있다.
+        var config = {
+            apiKey: "<SERVER API KEY>",
+            authDomain: "<YOUR AUTHDOMAIN>",
+            databaseURL: "<YOUR DATABASEURL>",
+            projectId: "<YOUR PROJECTID>",
+            storageBucket: "<YOUR STORAGEBUCKET>",
+            messagingSenderId: "<YOUR MESSAGINGSENDERID>"
+        };
+
+        firebase.initializeApp(config);
+
+        console.log('실행되는거 맞나?'); //실행되는지 테스트하기
+
+        const messaging = firebase.messaging();
+
+
+        //사용가능한 토큰을 발급???(요건 잘 모르겠다.)
+        messaging.onTokenRefresh(function () {
+            messaging.getToken().then(function (refreshedToken) {
+                console.log('Token refreshed.');
+                // Indicate that the new Instance ID token has not yet been sent to the
+                // app server.
+                setTokenSentToServer(false);
+                // Send Instance ID token to app server.
+                sendTokenToServer(refreshedToken);
+                // [START_EXCLUDE]
+                // Display new Instance ID token and clear UI of all previous messages.
+                resetUI();
+                // [END_EXCLUDE]
+            }).catch(function (err) {
+                console.log('Unable to retrieve refreshed token ', err);
+                showToken('Unable to retrieve refreshed token ', err);
+            });
+        });
+
+        //알림 권한 받기
+        function requestPermission() {
+            messaging.requestPermission().then(function () {
+                console.log('Notification permission granted.');
+
+                return messaging.getToken();
+
+            }).then(function (token) {
+
+                var token_value = document.getElementById("token");
+
+                token_value.innerText = token;
+
+            }).catch(function (err) {
+                console.log('Unable to get permission to notify.', err);
+            });
+        }
+
+
+        //서버로 푸시 요청하기
+        function sendPush() {
+            var xmlHttp = new XMLHttpRequest();
+
+            var url = "sendPush.php";
+
+            var token_value = document.getElementById("token"); //alert(config.apiKey);
+
+
+            xmlHttp.onreadystatechange = function () {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                    console.log(xmlHttp.responseText);
+
+                }
+            };
+            xmlHttp.open("POST", url, true);
+            xmlHttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xmlHttp.send("api_key=" + config.apiKey + "&token=" + token_value.innerText);
+
+
+        }
+    </script>
+</head>
+
+<body>
+    <button onclick="requestPermission()">구독 설정</button>
+    <input type="button" onclick="sendPush()" value="푸시알림 보내기">
+    <h1>하단이 발급된 토큰</h1>
+    <p name="token" id="token"></p>
+
+
+
+
+
+</body>
+
+</html>
